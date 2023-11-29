@@ -77,4 +77,16 @@ public class ServerImpl extends UnicastRemoteObject implements IServer {
 	public void addClient(Client client) throws RemoteException {
 	}
 
+	@Override
+	public void removeClient(String name) throws RemoteException {
+		// TODO Auto-generated method stub
+		for (Client client : listClient) {
+			if (client.getName().equals(name)) {
+				listClient.remove(client);
+				break;
+			}
+		}
+		serverView.textArea.append(name + " client offline...\n");
+	}
+
 }

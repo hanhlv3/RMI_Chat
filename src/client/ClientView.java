@@ -6,6 +6,8 @@ import java.awt.Font;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -19,6 +21,7 @@ import my_interface.Room;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.JButton;
@@ -33,12 +36,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.swing.JSeparator;
@@ -51,6 +60,7 @@ import java.awt.Dimension;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.JLabel;
+import javax.sound.sampled.LineUnavailableException;
 import javax.swing.ImageIcon;
 import javax.swing.JMenuBar;
 
@@ -61,7 +71,6 @@ public class ClientView extends JFrame {
 	public JList<String> listChatterOnline;
 	
 	public String message;
-	public  JTextArea textArea;
 	 
 	public ClientImp clientImp;
 	public String myName;
@@ -72,12 +81,33 @@ public class ClientView extends JFrame {
 	private JButton btnEmoji;
 	private JButton btnFile;
 	
-
+	private boolean isRecording = false;
+	private JButton btnAudio;
+	private byte audioData[];
+	
+	
 	public ClientView(ClientImp clientImp, String myName) {
 		this.clientImp = clientImp;
 		this.myName = myName;
 		
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				int option = JOptionPane.showConfirmDialog(null, "Bạn muốn offline ?", "Thông báo", JOptionPane.YES_NO_OPTION);
+		        if (option == JOptionPane.YES_OPTION) {
+		            // add thêm vô chatter
+		        	try {
+						clientImp.close();
+						System.exit(0);
+						
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+		        }
+			}
+		});
+		
 		setBounds(100, 100, 535, 339);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -136,7 +166,7 @@ public class ClientView extends JFrame {
 		panel_3.add(btnCreateGroup, BorderLayout.SOUTH);
 		
 		JPanel panel_1 = new JPanel();
-		panel_1.setBounds(165, 11, 346, 280);
+		panel_1.setBounds(165, 11, 346, 291);
 		contentPane.add(panel_1);
 		panel_1.setLayout(null);
 		
@@ -145,7 +175,7 @@ public class ClientView extends JFrame {
 		panel_1.add(tabbedPane);
 		
 		txtMessage = new JTextField();
-		txtMessage.setBounds(0, 260, 229, 20);
+		txtMessage.setBounds(0, 260, 231, 25);
 		panel_1.add(txtMessage);
 		txtMessage.setColumns(10);
 		
@@ -166,7 +196,7 @@ public class ClientView extends JFrame {
 			}
 		});
 		
-		btnSend.setBounds(301, 260, 45, 20);
+		btnSend.setBounds(301, 260, 45, 25);
 		panel_1.add(btnSend);
 		
 		btnEmoji = new JButton("");
@@ -177,7 +207,7 @@ public class ClientView extends JFrame {
 			}
 		});
 		btnEmoji.setBackground(new Color(255, 255, 255));
-		btnEmoji.setBounds(258, 260, 45, 20);
+		btnEmoji.setBounds(279, 260, 22, 25);
 		panel_1.add(btnEmoji);
 		
 		btnFile = new JButton("");
@@ -193,11 +223,87 @@ public class ClientView extends JFrame {
 		});
 		btnFile.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\fileIcon (1).png"));
 		btnFile.setBackground(Color.WHITE);
-		btnFile.setBounds(229, 260, 28, 23);
+		btnFile.setBounds(257, 260, 22, 25);
 		panel_1.add(btnFile);
+		
+		btnAudio = new JButton("");
+		btnAudio.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\icons8-microphone-25.png"));
+		btnAudio.setBackground(new Color(240, 240, 240));
+		btnAudio.setBounds(235, 260, 22, 25);
+		btnAudio.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				sendAudio();
+			}
+		});
+		
+		panel_1.add(btnAudio);
+	
 		
 		this.setTitle(myName);
 		this.setVisible(true);
+	}
+
+	protected void sendAudio() {
+		
+		// check
+		if (!isRecording) {
+			// start recording audio
+			btnAudio.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\recording.png") );
+			isRecording = true;
+			
+			Thread t = new Thread() {
+				public void run() {
+					AudioController audioController = new AudioController();
+		            ByteArrayOutputStream out = new ByteArrayOutputStream();
+		            audioData = null;
+					while (isRecording) {
+						audioController.numBytesRead = audioController.microphone.read(audioController.data, 0, audioController.CHUNK_SIZE);
+						out.write(audioController.data, 0, audioController.numBytesRead);
+					}
+					
+					audioController.microphone.close();
+					audioData = out.toByteArray();
+					
+					// send data
+					int option = JOptionPane.showConfirmDialog(null,  "Gửi audio vừa record?", "Thông báo", JOptionPane.YES_NO_OPTION);
+			        if (option == JOptionPane.YES_OPTION) {
+			            // send data
+			        	int selectedIndex = tabbedPane.getSelectedIndex();
+			    		if (selectedIndex  == -1) return;
+ 		
+			    		String nameReciver = tabbedPane.getTitleAt(selectedIndex);
+			        	try {
+							clientImp.sendAudio(audioData, nameReciver);
+							
+							JTextPane textPane = (JTextPane) tabbedPane.getComponentAt(selectedIndex);
+							
+							String contentTextPane = textPane.getText().trim();
+							String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+							
+							String disPlayMes = "<div style='text-align: right; color: blue;'>"
+									+ "<a href='#link2' style='text-decoration: none;'>" + "&#128266;" + "</a>"
+									+ "</div>";
+							textPane.setText(subContent + disPlayMes);
+							// set Text message area 
+							
+						} catch (RemoteException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+			        	
+			        	
+			        } else return;
+				}
+			};
+			t.start();
+			
+		} else {
+			// end recording and send 
+			isRecording = false;
+			btnAudio.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\icons8-microphone-25.png") );
+	
+		}
+		
 	}
 
 	protected void sendFile() throws IOException {
@@ -221,7 +327,21 @@ public class ClientView extends JFrame {
 			
 			String nameReciver = tabbedPane.getTitleAt(selectedIndex);
 			
+			
+			
 			clientImp.sendFile(nameReciver, fileData, fileName);
+			
+			// update view 
+			JTextPane textPane = (JTextPane) tabbedPane.getComponentAt(selectedIndex);
+			
+			String contentTextPane = textPane.getText().trim();
+			String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+			
+			String disPlayMes = "<div style='text-align: right; color: blue;'>"
+					+ "<a href='#link2' style='text-decoration: underline;'>" + fileName + "</a>"
+					+ "</div>";
+			textPane.setText(subContent + disPlayMes);
+			
 		}
 		
 	}
@@ -282,8 +402,11 @@ public class ClientView extends JFrame {
 			return;
 		}
 		// add tab
-		textArea = new JTextArea();
-		tabbedPane.addTab(clientSelected, null, textArea, null);
+		JTextPane textPane = new JTextPane();
+		textPane.setContentType("text/html");
+	    textPane.setEditable(false);
+	    
+		tabbedPane.addTab(clientSelected, null, textPane, null);
 		
 	}
 
@@ -292,34 +415,134 @@ public class ClientView extends JFrame {
 		int selectedIndex = tabbedPane.getSelectedIndex();
 		if (selectedIndex  == -1) return;
 		
-		String msg = this.myName + ": " + txtMessage.getText().trim();
+		String msg = txtMessage.getText().trim();
 		
 		String nameReciver = tabbedPane.getTitleAt(selectedIndex);
-		JTextArea jTextArea = (JTextArea) tabbedPane.getComponentAt(selectedIndex);
-		jTextArea.append(msg + "\n");
+		JTextPane textPane = (JTextPane) tabbedPane.getComponentAt(selectedIndex);
+		
+		String contentTextPane = textPane.getText().trim();
+		String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+		
+		String disPlayMes = "<div style='text-align: right;'><span>" + msg + "</span></div>";
+		textPane.setText(subContent + disPlayMes);
+	
 		txtMessage.setText("");
 		
 		// send toi retrive
-		clientImp.sendMessage(nameReciver, msg);
+		clientImp.sendMessage(nameReciver, this.myName + ": " + msg);
 		
 	}
 
 	public void setMessage(String nameSender, String msg) {
-		JTextArea jArea = getTextAreaByTabName(nameSender);
-		if (jArea != null ) {
-			jArea.append(msg + "\n");
+		JTextPane textPane = getTextAreaByTabName(nameSender);
+		if (textPane != null ) {
+			String contentTextPane = textPane.getText().trim();
+			String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+			
+			String disPlayMes = "<div style='text-align: left;'>"
+								+  msg
+								+ "</div>";
+			textPane.setText(subContent + disPlayMes);
+		}
+	}
+	
+	public void setMessageAudio(String sender, String audioKey) {
+		JTextPane textPane = getTextAreaByTabName(sender);
+		if (textPane != null) {
+			String contentTextPane = textPane.getText().trim();
+			String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+			
+			String disPlayMes = "<div style='text-align: left; '>" 
+					+ "<span>" + sender + ": </span>"
+					+ "<a href='" + audioKey + "' style='color: blue; text-decoration: none;'>" + "&#128266;" + "</a>"
+					+ "</div>";
+			textPane.setText(subContent + disPlayMes);
+			
+			textPane.addHyperlinkListener(new HyperlinkListener() {
+				
+				@Override
+				public void hyperlinkUpdate(HyperlinkEvent e) {
+					// hyper link
+					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+						String href = e.getDescription();
+						System.out.print(href);
+						int selectedIndex = tabbedPane.getSelectedIndex();
+						if (selectedIndex  == -1) return;
+								
+					    String tagName = tabbedPane.getTitleAt(selectedIndex);
+						
+						Map<String, byte[]> mapData = clientImp.listAudios.get(tagName);
+						byte[] audioData =  mapData.get(href);
+						
+						// phat am
+						try {
+							AudioController.playAudio(audioData);
+						} catch (LineUnavailableException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					}
+				}
+			});
 		}
 	}
 	
 	public void setMessageFile(String nameSender, String fileName) {
-		
+		JTextPane textPane = getTextAreaByTabName(nameSender);
+		if (textPane != null) {
+			String contentTextPane = textPane.getText().trim();
+			String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
+			
+			String disPlayMes = "<div style='text-align: left; '>" 
+					+ "<span>" + nameSender + ": </span>"
+					+ "<a href='" + fileName + "' style='text-decoration: underline; color: blue;'>" + fileName + "</a>"
+					+ "</div>";
+			textPane.setText(subContent + disPlayMes);
+			
+			textPane.addHyperlinkListener(new HyperlinkListener() {
+				
+				@Override
+				public void hyperlinkUpdate(HyperlinkEvent e) {
+					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+						 String href = e.getDescription();
+						 int selectedIndex = tabbedPane.getSelectedIndex();
+							if (selectedIndex  == -1) return;
+								
+							String tagName = tabbedPane.getTitleAt(selectedIndex);
+							
+							Map<String, byte[]> mapData = clientImp.listFileContents.get(tagName);
+							byte[] fileContent=  mapData.get(href);
+							
+							// save file
+							if (fileContent != null) {
+								 JFileChooser fileChooser = new JFileChooser();
+								 fileChooser.setDialogTitle("Chọn vị trí để lưu file");
+								 int userSelection = fileChooser.showSaveDialog(null);
+								 if (userSelection == JFileChooser.APPROVE_OPTION) {
+								     File selectedFile = fileChooser.getSelectedFile();
+								     String filePath = selectedFile.getAbsolutePath() + File.separator;
+
+								     try (FileOutputStream fos = new FileOutputStream(filePath)) {
+								            fos.write(fileContent);
+								            JOptionPane.showMessageDialog(null, "File đã được lưu thành công.");
+								     } catch (IOException e1) {
+								            e1.printStackTrace();
+								        }
+								    }
+		                    }
+							
+					}
+					
+				}
+			}); 
+		}
 	}
 	
-	private JTextArea getTextAreaByTabName(String tabName) {
+	private JTextPane getTextAreaByTabName(String tabName) {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             String currentTabName = tabbedPane.getTitleAt(i);
             if (currentTabName.equals(tabName)) {
-                return (JTextArea) tabbedPane.getComponentAt(i);
+                return (JTextPane) tabbedPane.getComponentAt(i);
             }
         }
         return null; // Trả về null nếu không tìm thấy tab với tên cần tìm
@@ -342,8 +565,11 @@ public class ClientView extends JFrame {
 	protected void addChatter(String nameChatter) throws RemoteException {
 		this.clientImp.addChatter(nameChatter, 0);
 		// add tab
-		textArea = new JTextArea();
-		tabbedPane.addTab(nameChatter, null, textArea, null);
+		
+		JTextPane textPane = new JTextPane();
+        textPane.setContentType("text/html");
+        textPane.setEditable(false);
+		tabbedPane.addTab(nameChatter, null, textPane, null);
 	}
 
 	public void updateGroupList(List<Room> listRooms) {
@@ -357,7 +583,11 @@ public class ClientView extends JFrame {
 
 	public void insertTabChat(Room room) {
 		// add tab
-		textArea = new JTextArea();
-		tabbedPane.addTab(room.getRoomName(), null, textArea, null);
+		JTextPane textPane = new JTextPane();
+		
+		textPane.setContentType("text/html");
+	    textPane.setEditable(false);
+	  
+		tabbedPane.addTab(room.getRoomName(), null, textPane, null);
 	}
 }

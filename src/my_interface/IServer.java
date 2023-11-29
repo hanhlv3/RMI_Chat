@@ -14,6 +14,8 @@ public interface IServer extends Remote {
 	
 	public void addClient(Client client) throws RemoteException;
 	
+	public void removeClient(String name) throws RemoteException;
+	
 	
 	public boolean checkClientExits(String nickName) throws RemoteException;
 }

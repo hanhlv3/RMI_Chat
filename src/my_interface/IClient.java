@@ -11,6 +11,8 @@ public interface IClient extends Remote{
 	
 	public void retriveFile(byte[] data, String fileName, String sender) throws RemoteException;
 	
+	public void retriveAudio(byte[] data, String sender, String audioKey) throws RemoteException;
+	
 	public void registerClient(IClient client) throws RemoteException;
 	
 	public void updateOnlineClients(List<Client> onlineClients) throws RemoteException;
@@ -20,4 +22,6 @@ public interface IClient extends Remote{
 	public boolean connectChatter(String name) throws RemoteException;
 	
 	public void createGroup(String groupName, List<Client> listClients) throws RemoteException;
+	
+	public void removeClient(String clientName) throws RemoteException;
 }

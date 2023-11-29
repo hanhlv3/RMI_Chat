@@ -16,7 +16,7 @@ public class RunServer {
 			
 			registry.rebind("server", serverImpl);
 			
-			System.out.println("Server is runnigg...");
+			System.out.println("Server is runnig...");
 		} catch (Exception e) {
 			// TODO: handle exception
 		}

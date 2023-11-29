@@ -13,11 +13,13 @@ public class ColorfulTextAreaExample  {
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
         textPane.setEditable(false);
-        textPane.setText("<html><body><div style='text-align:right;'>" +
-                "<a href='#link1' style='color: black;'>&#128513;</a><br>" +
-                "<a href='#link2' style='text-decoration: underline;'>Link 2</a><br>" +
-                "<a href='#link3' style='text-decoration: underline;'>Link 3</a><br>" +
-                "</div></body></html>");
+        textPane.setText(
+        		"<div style=\"display: inline-block;\">\r\n"
+        		+ "      <div style=\"float: right; background-color: rgb(52, 52, 229); max-width: fit-content; display: block; padding: 5px 10px; border-radius: 5px radius; color: white;\">\r\n"
+        		+ "        <span>Hi</span>\r\n"
+        		+ "      </div>\r\n"
+        		+ "    </div>"
+        );
 
         textPane.addHyperlinkListener(new HyperlinkListener() {
             @Override

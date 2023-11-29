@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Vector;
 
 import my_interface.Client;
@@ -31,7 +32,8 @@ public class ClientImp implements IClient, Serializable  {
     List<Client> chattersClients = new ArrayList<Client>();
     List<Room> listRooms = new ArrayList<>();
     
-    Map<String, byte[]> listFileContents = new HashMap<String, byte[]>();
+    Map<String, Map<String, byte[]>> listFileContents = new HashMap<String, Map<String,byte[]>>();
+    Map<String, Map<String, byte[]>> listAudios = new HashMap<String, Map<String, byte[]>>();
     
     public ClientImp(IServer chatServer, String myName) throws RemoteException {
         clientView = new ClientView(this, myName);
@@ -60,6 +62,8 @@ public class ClientImp implements IClient, Serializable  {
 			this.clientView.setMessage(nameSender, msg);
 		}
 	}
+	
+	
 	@Override
 	public void updateOnlineClients(List<Client> onlineClients) throws RemoteException {
 		this.onlineClients = onlineClients;
@@ -232,16 +236,92 @@ public class ClientImp implements IClient, Serializable  {
 	@Override
 	public void retriveFile(byte[] data, String fileName, String sender) throws RemoteException {
 		
-		// TODO Auto-generated method stub
-		System.out.println("File name sender: " + sender + fileName);
-		this.listFileContents.put(fileName, data);
+		Map<String, byte[]> dataFile = new HashMap<String, byte[]>();
+		dataFile.put(fileName, data);
+		
+		this.listFileContents.put(sender, dataFile);
 		
 		// set into ui
 		this.clientView.setMessageFile(sender, fileName);
 		
 	}
 	
+	public void sendAudio(byte[] dataAudio, String nameReciver) throws RemoteException {
+		String audioKey = generateRandomString(5);
+		
+		if (isChatter(nameReciver)) {
+			// send to chatter
+			Client client = getChatterByName(nameReciver);
+			client.getiClient().retriveAudio(dataAudio, myName, audioKey);
+			
+		} else {
+			// send to group
+			
+		}
+		
+	}
 	
+	@Override
+	public void retriveAudio(byte[] data, String sender, String audioKey) throws RemoteException {
+		Map<String, byte[]> dataFile = new HashMap<String, byte[]>();
+		dataFile.put(audioKey, data);
+		System.out.println("Retrive: " + data);
+		this.listAudios.put(sender, dataFile);
+		this.clientView.setMessageAudio(sender, audioKey);
+	}
 	
+	public static String generateRandomString(int length) {
+        // Ký tự cho phép trong chuỗi ngẫu nhiên
+        String allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(length);
+        
+        // Tạo chuỗi ngẫu nhiên bằng cách chọn ngẫu nhiên ký tự từ chuỗi allowedChars
+        for (int i = 0; i < length; i++) {
+            int randomIndex = random.nextInt(allowedChars.length());
+            char randomChar = allowedChars.charAt(randomIndex);
+            sb.append(randomChar);
+        }
+        
+        return sb.toString();
+    }
+	
+	public void close() throws RemoteException {
+		for (Client client: onlineClients) {
+			if (!client.getName().equals(myName)) {
+				client.getiClient().removeClient(myName);
+			}
+		}
+	}
+	
+	@Override
+	public void removeClient(String clientName) throws RemoteException {
+		// TODO Auto-generated method stub
+		// xoa khoi danh sach online
+		for (Client client : onlineClients) {
+			if (client.getName().equals(clientName)) {
+				onlineClients.remove(client);
+				break;
+			}
+		}
+		
+		// xoa khoi room
+		for (Room room: listRooms) {
+			for (Client client: room.getListClients()) {
+				if (client.getName().equals(clientName)) {
+					room.getListClients().remove(client);
+					break;
+				}
+			}
+		}
+		
+		// update GUI
+		Vector<String> listNames = new Vector<>();
+		for (Client object : onlineClients) {
+			listNames.add(object.getName());
+		}
+		this.clientView.listChatterOnline.setListData(listNames);
+		
+	}
 	
 }

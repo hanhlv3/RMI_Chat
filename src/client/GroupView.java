@@ -90,7 +90,7 @@ public class GroupView extends JFrame {
 		panel_1.add(btnCreateGroup);
 		
 		this.setVisible(true);
-		this.setTitle("Create group");
+		this.setTitle("");
 	}
 	
 	protected void createGroup() throws RemoteException {

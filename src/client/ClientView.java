@@ -175,13 +175,13 @@ public class ClientView extends JFrame {
 		panel_1.add(tabbedPane);
 		
 		txtMessage = new JTextField();
-		txtMessage.setBounds(0, 260, 231, 25);
+		txtMessage.setBounds(0, 260, 222, 25);
 		panel_1.add(txtMessage);
 		txtMessage.setColumns(10);
 		
 		JButton btnSend = new JButton("");
 		btnSend.setBackground(new Color(255, 255, 255));
-		btnSend.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\airplane (1).png"));
+		btnSend.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\send .png"));
 		btnSend.addActionListener(new ActionListener() {
 			
 			@Override
@@ -200,7 +200,7 @@ public class ClientView extends JFrame {
 		panel_1.add(btnSend);
 		
 		btnEmoji = new JButton("");
-		btnEmoji.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\icons8-emoji-48 (1) (1).png"));
+		btnEmoji.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\emoji-smile.png"));
 		btnEmoji.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				openEmojiDialog();
@@ -228,8 +228,8 @@ public class ClientView extends JFrame {
 		
 		btnAudio = new JButton("");
 		btnAudio.setIcon(new ImageIcon("D:\\Java\\RMI\\RMI_GUI\\resources\\img\\icons8-microphone-25.png"));
-		btnAudio.setBackground(new Color(240, 240, 240));
-		btnAudio.setBounds(235, 260, 22, 25);
+		btnAudio.setBackground(new Color(255, 255, 255));
+		btnAudio.setBounds(232, 260, 25, 25);
 		btnAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				sendAudio();
@@ -264,7 +264,10 @@ public class ClientView extends JFrame {
 					audioController.microphone.close();
 					audioData = out.toByteArray();
 					
+					System.out.println("audio data" + audioData);
+					
 					// send data
+					
 					int option = JOptionPane.showConfirmDialog(null,  "Gửi audio vừa record?", "Thông báo", JOptionPane.YES_NO_OPTION);
 			        if (option == JOptionPane.YES_OPTION) {
 			            // send data
@@ -290,7 +293,6 @@ public class ClientView extends JFrame {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-			        	
 			        	
 			        } else return;
 				}
@@ -423,7 +425,7 @@ public class ClientView extends JFrame {
 		String contentTextPane = textPane.getText().trim();
 		String subContent  = contentTextPane.substring(contentTextPane.indexOf("<body>"), contentTextPane.indexOf("</body>"));
 		
-		String disPlayMes = "<div style='text-align: right;'><span>" + msg + "</span></div>";
+		String disPlayMes = "<div style='text-align: left;'><span>" + msg + "</span></div>";
 		textPane.setText(subContent + disPlayMes);
 	
 		txtMessage.setText("");
@@ -463,9 +465,11 @@ public class ClientView extends JFrame {
 				@Override
 				public void hyperlinkUpdate(HyperlinkEvent e) {
 					// hyper link
-					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+					System.out.println("listen event");
+					if (e.getEventType() == HyperlinkEvent.EventType.ENTERED) {
 						String href = e.getDescription();
-						System.out.print(href);
+						System.out.println("event loa");
+					
 						int selectedIndex = tabbedPane.getSelectedIndex();
 						if (selectedIndex  == -1) return;
 								
@@ -482,7 +486,7 @@ public class ClientView extends JFrame {
 							e1.printStackTrace();
 						}
 					}
-				}
+			}
 			});
 		}
 	}

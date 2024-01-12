@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
 
+import javax.sound.sampled.LineUnavailableException;
+
 import my_interface.Client;
 import my_interface.IClient;
 import my_interface.IServer;
@@ -249,6 +251,7 @@ public class ClientImp implements IClient, Serializable  {
 	public void sendAudio(byte[] dataAudio, String nameReciver) throws RemoteException {
 		String audioKey = generateRandomString(5);
 		
+		
 		if (isChatter(nameReciver)) {
 			// send to chatter
 			Client client = getChatterByName(nameReciver);
@@ -265,8 +268,9 @@ public class ClientImp implements IClient, Serializable  {
 	public void retriveAudio(byte[] data, String sender, String audioKey) throws RemoteException {
 		Map<String, byte[]> dataFile = new HashMap<String, byte[]>();
 		dataFile.put(audioKey, data);
-		System.out.println("Retrive: " + data);
+		
 		this.listAudios.put(sender, dataFile);
+		
 		this.clientView.setMessageAudio(sender, audioKey);
 	}
 	

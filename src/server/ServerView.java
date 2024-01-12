@@ -12,6 +12,8 @@ import my_interface.IClient;
 import my_interface.IServer;
 
 import javax.swing.JTextArea;
+import javax.swing.JLabel;
+import java.awt.Font;
 
 public class ServerView extends JFrame{
 
@@ -31,16 +33,19 @@ public class ServerView extends JFrame{
 		contentPane.setLayout(null);
 		
 		textArea = new JTextArea();
-		textArea.setBounds(22, 23, 404, 192);
+		textArea.setBounds(22, 60, 404, 192);
 		textArea.setCaret(new DefaultCaret());
 		contentPane.add(textArea);
 		
+		JLabel lblNewLabel = new JLabel("ADMIN");
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+		lblNewLabel.setBounds(173, 23, 124, 26);
+		contentPane.add(lblNewLabel);
+		
 		this.setVisible(true);
-	}
+	}	
 	
 	public void addUser(String msg) {
 		textArea.setText(msg);
 	}
-
-	
 }

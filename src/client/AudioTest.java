@@ -46,29 +46,12 @@ public class AudioTest {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            
+            System.out.print("phat am");
             byte audioData[] = out.toByteArray();
             
             AudioController.playAudio(audioData); // true
-//            InputStream byteArrayInputStream = new ByteArrayInputStream(audioData);
-//            audioInputStream = new AudioInputStream(byteArrayInputStream, format, audioData.length / format.getFrameSize());
-//            DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, format);
-//            sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
-//            sourceDataLine.open(format);
-//            sourceDataLine.start();
-//            int cnt;
-//            byte tempBuffer[] = new byte[10000];
-//            try {
-//                while ((cnt = audioInputStream.read(tempBuffer, 0, tempBuffer.length)) != -1) {
-//                    if (cnt > 0) {
-//                        sourceDataLine.write(tempBuffer, 0, cnt);
-//                    }
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//
-//            sourceDataLine.drain();
-//            sourceDataLine.close();
+
             microphone.close();
         } catch (LineUnavailableException e) {
             e.printStackTrace();
